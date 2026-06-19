@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     proxy_mode: Literal["record", "replay", "regular"] = Field(default="replay", alias="PROXY_MODE")
+    proxy_api_key: str | None = Field(default=None, alias="PROXY_API_KEY")
     groq_api_key: str | None = Field(default=None, alias="GROQ_API_KEY")
     groq_base_url: str = Field(default="https://api.groq.com/openai/v1", alias="GROQ_BASE_URL")
     sqlite_path: Path = Field(default=Path("data/fixtures.db"), alias="SQLITE_PATH")

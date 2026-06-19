@@ -1,0 +1,26 @@
+# Render Blueprint for the FastAPI proxy.
+# Deploy: push to GitHub, then "New + → Blueprint" and select this repo.
+services:
+  - type: web
+    name: mock-llm-api
+    runtime: python
+    plan: free            # free spins down after ~15 min idle; bump to "starter" to stay always-on
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PROXY_MODE
+        value: regular
+      - key: GROQ_API_KEY     # set in the Render dashboard, do not commit
+        sync: false
+      - key: PROXY_API_KEY    # shared secret; clients send it as the X-Proxy-Key header
+        sync: false
+      - key: SQLITE_PATH
+        value: data/fixtures.db   # ephemeral on free tier — see note below
+
+    # Persistent fixtures require a paid instance + disk. Uncomment and set
+    # SQLITE_PATH=/data/fixtures.db above to keep recordings across redeploys:
+    # disk:
+    #   name: fixtures
+    #   mountPath: /data
+    #   sizeGB: 1
