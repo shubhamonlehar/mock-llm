@@ -50,6 +50,7 @@ Create `.env` from `.env.example`, then adjust values as needed. The app loads `
 
 ```text
 PROXY_MODE=replay
+PROXY_API_KEY=
 GROQ_API_KEY=your_groq_api_key_here
 GROQ_BASE_URL=https://api.groq.com/openai/v1
 SQLITE_PATH=data/fixtures.db
@@ -60,6 +61,8 @@ PROVIDER=groq
 
 When `GROQ_API_KEY` is configured, the proxy uses it for forwarded Groq requests. Incoming `Authorization` headers are only used when `GROQ_API_KEY` is not set.
 
+`PROXY_API_KEY` is an optional shared secret that guards the `/openai` and `/admin` endpoints — useful when the proxy is publicly deployed. When set, every request to those paths must send a matching `X-Proxy-Key` header, otherwise the proxy returns HTTP 401 with `{"error": "unauthorized"}`. Leave it blank to disable authentication (e.g. for local development).
+
 ## API
 
 Implemented proxy endpoints:
@@ -69,12 +72,32 @@ POST /openai/v1/chat/completions
 GET /openai/v1/models
 ```
 
+Health endpoint (used by cloud health checks, never requires auth):
+
+```http
+GET /health
+```
+
 Admin endpoints:
 
 ```http
 GET /admin/stats
 GET /admin/fixture/{request_hash}
 GET /admin/fixtures?model=llama-test&date=2026-06-15&limit=50&offset=0
+GET /admin/export
+DELETE /admin/fixtures
+```
+
+`GET /admin/export` returns every fixture in a single JSON document
+(`{"count": N, "fixtures": [...]}`) with a `Content-Disposition` header so it
+downloads as `fixtures.json`. `DELETE /admin/fixtures` clears all fixtures from
+SQLite and resets the proxy's in-memory hash cache.
+
+When `PROXY_API_KEY` is set, send it on every `/openai` and `/admin` call:
+
+```bash
+curl https://your-app.example.com/admin/export \
+  -H "X-Proxy-Key: your_proxy_api_key" -o fixtures.json
 ```
 
 ## Fixtures
