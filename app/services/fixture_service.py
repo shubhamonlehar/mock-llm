@@ -79,6 +79,9 @@ class FixtureService:
     ) -> list[Fixture]:
         return self.repository.search(model=model, date=date, limit=limit, offset=offset)
 
+    def all_fixtures(self) -> list[Fixture]:
+        return self.repository.all()
+
     def fixture_count(self) -> int:
         return self.repository.count()
 

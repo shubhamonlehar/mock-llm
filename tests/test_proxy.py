@@ -181,6 +181,25 @@ def test_models_record_forwards_to_provider(client_factory) -> None:
     assert provider.model_calls == 1
 
 
+def test_admin_export_returns_all_fixtures(client_factory, sample_payload) -> None:
+    client, _, db_path = client_factory(mode="replay")
+    FixtureRepository(db_path).upsert(
+        request_hash=generate_request_hash(sample_payload),
+        provider="groq",
+        model="llama-test",
+        request=sample_payload,
+        response={"export": True},
+    )
+
+    response = client.get("/admin/export")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["count"] == 1
+    assert body["fixtures"][0]["response"] == {"export": True}
+    assert "attachment" in response.headers["content-disposition"]
+
+
 def test_clear_fixtures_deletes_db_and_cache(client_factory, sample_payload) -> None:
     client, _, db_path = client_factory(mode="replay")
     request_hash = generate_request_hash(sample_payload)

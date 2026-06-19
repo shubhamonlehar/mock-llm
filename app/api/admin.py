@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse
 
 from app.api.dependencies import fixture_service
 from app.services.fixture_service import FixtureService
@@ -55,6 +56,29 @@ async def fixtures(
         "limit": limit,
         "offset": offset,
     }
+
+
+@router.get("/export")
+async def export_fixtures(service: FixtureService = Depends(fixture_service)) -> JSONResponse:
+    fixtures = service.all_fixtures()
+    payload = {
+        "count": len(fixtures),
+        "fixtures": [
+            {
+                "request_hash": item.request_hash,
+                "provider": item.provider,
+                "model": item.model,
+                "created_at": item.created_at,
+                "request": item.request,
+                "response": item.response,
+            }
+            for item in fixtures
+        ],
+    }
+    return JSONResponse(
+        content=payload,
+        headers={"Content-Disposition": 'attachment; filename="fixtures.json"'},
+    )
 
 
 @router.delete("/fixtures")
